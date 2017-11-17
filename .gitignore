@@ -1,0 +1,8 @@
+# Pra ignorar meu arquivo de configuracoes do editor de texto
+.vscode/
+
+# Pra ignorar as pastas __pycache__ malditas
+__pycache__/
+
+# Pra ignorar os .pyc compilados malditos
+*.pyc
