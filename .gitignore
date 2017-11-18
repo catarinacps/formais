@@ -6,3 +6,5 @@ __pycache__/
 
 # Pra ignorar os .pyc compilados malditos
 *.pyc
+
+release/

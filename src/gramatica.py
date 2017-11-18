@@ -1,4 +1,5 @@
 import re
+from src.regras import Regra
 
 class Gramatica:
     """Classe Gramatica, que representa uma gramatica qualquer.
@@ -31,9 +32,9 @@ class Gramatica:
             self.inicial = ''
             # é a string que guarda a variável inicial
             self.regras = []
-            # é uma lista de listas de strings. Cada sublista contém as strings que representam
-            # as regras da gramática, num formato:
-            # ['S', 'S', 'a']   <->     S -> Sa
+            # é uma lista de objetos Regra. Cada Regra contém as strings que representam
+            # os seus elementos, num formato:
+            # 'S', ['S', 'a']   <->     S -> Sa
 
             # A variável "secao" representa uma flag de controle pra um pseudo-switch futuro
             secao = 0
@@ -41,12 +42,13 @@ class Gramatica:
             # magias de python. Como ele sabe como iterar sobre cada linha do arquivo nessa sintaxe
             # simples e limpa? Não faço ideia.
             for linha in textFile:
-                # Aqui eu chamo uma função "private" auxiliar pra me dizer em que parte do arquivo
-                # eu to. Note que a função tem dois "__" na frente do nome. Teoricamente é assim que
-                # se faz funções privadas em python.
-                if self.__decodeSection(linha, regexSecao) == 1:
-                    # Se a função retorna 1, é hora de trocar de seção, logo eu somo 1 na flag
+                # A função na próxima linha aplica uma regra de expressões regulares na linha,
+                # procurando as palavras-chave de seção, que indicam o início de uma nova seção
+                if regexSecao.search(linha) != None:
+                    # Se a função algo diferente de None, é hora de trocar de seção
                     secao += 1
+                    # o que é representado por eu incrementar a variável ali em cima
+                    # e passar pra próxima linha
                     continue
 
                 # Eis um pseudo-switch. Python é uma das poucas linguagens que não tem switch.
@@ -67,31 +69,25 @@ class Gramatica:
                             self.variaveis.append(match)
                 elif secao == 3:
                     # Seção == 3 -> #Inicial
-                    # Procuro o Inicial que aparece na linha, e, se existir, guardo 
+                    # Procuro o Inicial que aparece na linha, e, se existir, guardo
                     inicialEncontrado = regexVariaveis.findall(linha)
                     for match in inicialEncontrado:
                         if match != '':
                             self.inicial = match
                 elif secao == 4:
-                    # Seção == 1 -> #Regras
+                    # Seção == 4 -> #Regras
                     # Procuro as Regras que aparecem na linha, e, se existirem, coloco na lista
                     regrasEncontradas = regexRegras.findall(linha)
                     listaRegras = []
                     for match in regrasEncontradas:
                         if match != '':
                             listaRegras.append(match)
-                    self.regras.append(listaRegras)
+                    self.regras.append(Regra(listaRegras))
                 else:
+                    # Default do meu pseudo-switch
                     print('not supposed to happen, sry')
                     return
 
-    def __decodeSection(self, line, regex):
-        header = regex.search(line)
-
-        if header != None:
-            return 1
-        else:
-            return 0
-
     def __str__(self):
-        return 'Terminais: ' + str(self.terminais) + '\nVariaveis: ' + str(self.variaveis) + '\nInicial: ' + self.inicial + '\nRegras: ' + str(self.regras)
+        return ('Terminais: ' + ', '.join(self.terminais) + '\nVariaveis: ' + ', '.join(self.variaveis) +
+                '\nInicial: ' + self.inicial + '\nRegras: ' + str(self.regras))
