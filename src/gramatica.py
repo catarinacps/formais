@@ -1,5 +1,5 @@
 import re
-from src.regras import Regra
+from src.regras import Derivacao
 
 class Gramatica:
     """Classe Gramatica, que representa uma gramatica qualquer.
@@ -31,10 +31,10 @@ class Gramatica:
             # é uma lista de strings contendo as variáveis
             self.inicial = ''
             # é a string que guarda a variável inicial
-            self.regras = []
-            # é uma lista de objetos Regra. Cada Regra contém as strings que representam
-            # os seus elementos, num formato:
-            # 'S', ['S', 'a']   <->     S -> Sa
+            self.regras = {}
+            # é um dicionario de objetos Derivacao.
+            # Cada chave e seu respectivo valor representam
+            # {'S': ['S', 'a'], ...}   <->     S -> S a, ...
 
             # A variável "secao" representa uma flag de controle pra um pseudo-switch futuro
             secao = 0
@@ -51,6 +51,7 @@ class Gramatica:
                     # e passar pra próxima linha
                     continue
 
+                linha = linha.split('#')[0]
                 # Eis um pseudo-switch. Python é uma das poucas linguagens que não tem switch.
                 # Sei lá por que não tem. Ninguém realmente sabe porque na verdade.
                 if secao == 1:
@@ -82,7 +83,12 @@ class Gramatica:
                     for match in regrasEncontradas:
                         if match != '':
                             listaRegras.append(match)
-                    self.regras.append(Regra(listaRegras))
+
+                    variavel = listaRegras[0]
+                    if variavel not in self.regras:
+                        self.regras[variavel] = Derivacao(listaRegras[1:])
+                    else:
+                        self.regras[variavel].append_derivacao(listaRegras[1:])
                 else:
                     # Default do meu pseudo-switch
                     print('not supposed to happen, sry')
@@ -90,4 +96,10 @@ class Gramatica:
 
     def __str__(self):
         return ('Terminais: ' + ', '.join(self.terminais) + '\nVariaveis: ' + ', '.join(self.variaveis) +
-                '\nInicial: ' + self.inicial + '\nRegras: ' + str(self.regras))
+                '\nInicial: ' + self.inicial + '\nRegras: \n' + self.__rep_dict())
+
+    def __rep_dict(self):
+        string = ''
+        for key, value in self.regras.items():
+            string += key + str(value) + '\n'
+        return string
