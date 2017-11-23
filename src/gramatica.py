@@ -1,5 +1,5 @@
 import re
-from src.regras import Derivacao
+from src.regras import *
 
 class Gramatica:
     """Classe Gramatica, que representa uma gramatica qualquer.
@@ -19,10 +19,10 @@ class Gramatica:
         # automaticamente ao chegar no fim do bloco.
         with open(abspath, 'r') as textFile:
             # A segur estão as regras de regex que eu criei pra pegar as coisas de arquivos de texto
-            regexTerminais = re.compile(r'(?<=^\[ )[a-z](?= \])', re.A)
-            regexRegras = re.compile(r'(?<=\[ )\w(?= \])', re.A)
-            regexVariaveis = re.compile(r'(?<=^\[ )[A-Z](?= \])', re.A)
-            regexSecao = re.compile(r'^(#Terminais|#Variaveis|#Inicial|#Regras)', re.A)
+            regex_terminais = re.compile(r'(?<=^\[ )[a-z](?= \])', re.A)
+            regex_regras = re.compile(r'(?<=\[ )\w(?= \])', re.A)
+            regex_variaveis = re.compile(r'(?<=^\[ )[A-Z](?= \])', re.A)
+            regex_secao = re.compile(r'^(#Terminais|#Variaveis|#Inicial|#Regras)', re.A)
 
             # Aqui eu inicializo os atributos do futuro objeto de Gramática, onde:
             self.terminais = []
@@ -44,7 +44,7 @@ class Gramatica:
             for linha in textFile:
                 # A função na próxima linha aplica uma regra de expressões regulares na linha,
                 # procurando as palavras-chave de seção, que indicam o início de uma nova seção
-                if regexSecao.search(linha) != None:
+                if regex_secao.search(linha) != None:
                     # Se a função algo diferente de None, é hora de trocar de seção
                     secao += 1
                     # o que é representado por eu incrementar a variável ali em cima
@@ -57,38 +57,41 @@ class Gramatica:
                 if secao == 1:
                     # Seção == 1 -> #Terminais
                     # Procuro os terminais que aparecem na linha, e, se existirem, coloco na lista
-                    terminaisEncontrados = regexTerminais.findall(linha)
+                    terminaisEncontrados = regex_terminais.findall(linha)
                     for match in terminaisEncontrados:
                         if match != '':
                             self.terminais.append(match)
                 elif secao == 2:
                     # Seção == 2 -> #Variaveis
                     # Procuro as Variaveis que aparecem na linha, e, se existirem, coloco na lista
-                    variaveisEncontradas = regexVariaveis.findall(linha)
+                    variaveisEncontradas = regex_variaveis.findall(linha)
                     for match in variaveisEncontradas:
                         if match != '':
                             self.variaveis.append(match)
                 elif secao == 3:
                     # Seção == 3 -> #Inicial
                     # Procuro o Inicial que aparece na linha, e, se existir, guardo
-                    inicialEncontrado = regexVariaveis.findall(linha)
+                    inicialEncontrado = regex_variaveis.findall(linha)
                     for match in inicialEncontrado:
                         if match != '':
                             self.inicial = match
                 elif secao == 4:
                     # Seção == 4 -> #Regras
                     # Procuro as Regras que aparecem na linha, e, se existirem, coloco na lista
-                    regrasEncontradas = regexRegras.findall(linha)
+                    regrasEncontradas = regex_regras.findall(linha)
                     listaRegras = []
                     for match in regrasEncontradas:
                         if match != '':
-                            listaRegras.append(match)
+                            if match != 'V':
+                                listaRegras.append(match)
+                            else:
+                                listaRegras.append(VAZIO)
 
                     variavel = listaRegras[0]
                     if variavel not in self.regras:
                         self.regras[variavel] = Derivacao(listaRegras[1:])
                     else:
-                        self.regras[variavel].append_derivacao(listaRegras[1:])
+                        self.regras[variavel].acrescenta_derivacao(listaRegras[1:])
                 else:
                     # Default do meu pseudo-switch
                     print('not supposed to happen, sry')
@@ -98,8 +101,41 @@ class Gramatica:
         return ('Terminais: ' + ', '.join(self.terminais) + '\nVariaveis: ' + ', '.join(self.variaveis) +
                 '\nInicial: ' + self.inicial + '\nRegras: \n' + self.__rep_dict())
 
+    def simplificar(self):
+        copia_auxiliar = self.regras.copy()
+
+        for variavel, derivacao in copia_auxiliar.items():
+            if variavel != self.inicial and derivacao.gera_vazio():
+                if len(derivacao.derivados) == 1:
+                    self.__remove_variavel(variavel)
+                else:
+                    self.regras[variavel].remove_derivacao([VAZIO])
+                    self.__contempla_derivacao_vazia(variavel)
+        #self.regras[self.inicial].acrescenta_derivacao([VAZIO])
+
+    def __remove_variavel(self, variavel):
+        self.regras.pop(variavel, None)
+        for chave, valor in self.regras.items():
+            valor.remove_ocorrencias_variavel(variavel)
+
+    def __remove_simbolos_inuteis(self):
+        copia_auxiliar_var, copia_auxiliar_reg = self.variaveis.copy(), self.regras.copy()
+
+        for variavel in copia_auxiliar_var:
+            if variavel not in self.regras:
+                self.variaveis.remove(variavel)
+                for chave, valor in copia_auxiliar_reg:
+                    deriv = valor.gera_chave(variavel)
+                    if deriv:
+                        self.regras[chave].remove_derivacao(deriv)
+    
+    def __contempla_derivacao_vazia(self, variavel):
+        for chave in self.regras.keys():
+            if chave != variavel:
+                self.regras[chave].duplica_derivacoes(variavel)
+
     def __rep_dict(self):
         string = ''
         for key, value in self.regras.items():
-            string += key + str(value) + '\n'
+            string += key + ' -> ' + str(value) + '\n'
         return string

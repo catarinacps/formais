@@ -5,3 +5,7 @@ from src.gramatica import Gramatica
 entrada = Gramatica(os.path.abspath(sys.argv[1]))
 
 print(entrada)
+
+entrada.simplificar()
+
+print(entrada)
