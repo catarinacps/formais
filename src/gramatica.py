@@ -102,37 +102,51 @@ class Gramatica:
                 '\nInicial: ' + self.inicial + '\nRegras: \n' + self.__rep_dict())
 
     def simplificar(self):
-        copia_auxiliar = self.regras.copy()
+        fecho_vazio = []
+        for chave, valor in self.regras.items():
+            if valor.gera_vazio():
+                fecho_vazio.append(chave)
+        for variavel in fecho_vazio:
+            fecho_vazio += list(set(self.__fecho_indireto(variavel)) - set(fecho_vazio))
 
+        copia_auxiliar = self.regras.copy()
         for variavel, derivacao in copia_auxiliar.items():
             if variavel != self.inicial and derivacao.gera_vazio():
                 if len(derivacao.derivados) == 1:
                     self.__remove_variavel(variavel)
                 else:
                     self.regras[variavel].remove_derivacao([VAZIO])
-                    self.__contempla_derivacao_vazia(variavel)
-        #self.regras[self.inicial].acrescenta_derivacao([VAZIO])
+        copia_auxiliar = self.regras.copy()
+        for variavel, derivacao in copia_auxiliar.items():
+            for gerador_vazio in fecho_vazio:
+                if derivacao.gera_chave(gerador_vazio):
+                    self.regras[variavel].duplica_derivacoes(gerador_vazio)
+
+    def __fecho_indireto(self, variavel):
+        lista_geradora = []
+        for chave, valor in self.regras.items():
+            if variavel in valor.variaveis_geradas and variavel not in lista_geradora:
+                lista_geradora.append(chave)
+        return lista_geradora
 
     def __remove_variavel(self, variavel):
         self.regras.pop(variavel, None)
+        self.variaveis.remove(variavel)
         for chave, valor in self.regras.items():
             valor.remove_ocorrencias_variavel(variavel)
 
     def __remove_simbolos_inuteis(self):
         copia_auxiliar_var, copia_auxiliar_reg = self.variaveis.copy(), self.regras.copy()
-
         for variavel in copia_auxiliar_var:
             if variavel not in self.regras:
                 self.variaveis.remove(variavel)
                 for chave, valor in copia_auxiliar_reg:
-                    deriv = valor.gera_chave(variavel)
-                    if deriv:
-                        self.regras[chave].remove_derivacao(deriv)
-    
-    def __contempla_derivacao_vazia(self, variavel):
-        for chave in self.regras.keys():
-            if chave != variavel:
-                self.regras[chave].duplica_derivacoes(variavel)
+                    if variavel in valor.variaveis_geradas:
+                        self.regras[chave].remove_derivacao_considerando_variavel(variavel)
+
+        fecho_atingivel_variaveis = [self.inicial]
+        fecho_atingivel_terminais = []
+        #LITERALMENTE MORRENDO DE FOME
 
     def __rep_dict(self):
         string = ''
