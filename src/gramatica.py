@@ -147,6 +147,29 @@ class Gramatica:
         fecho_atingivel_variaveis = [self.inicial]
         fecho_atingivel_terminais = []
         #LITERALMENTE MORRENDO DE FOME
+        
+        # Eliminação das Produções Unitárias
+        # 1º] Cada variável das regras de produção terão um fecho (Fecho-VARIÁVEL). Nele só constará o valor 
+        #     da variável que estiver isolada na regra.
+        # 2º] Será percorrido o primeiro fecho.
+        # 3º] O símbolo unitário que estiver nesse fecho será substituído, na regra da variável, pela 
+        #     regra desse símbolo.
+    
+        # Exemplo
+        # --- 1º Passo ---
+        # Fecho-S = { B }
+        # Fecho-B = {   }
+
+        # --- 2º Passo ---
+        # Fecho-S = { B }
+        # -- Regras antes da eliminação
+        #    S -> AB | B 
+        #    B -> bB | b
+
+        # --- 3º Passo ---
+        # -- Regras após a eliminação
+        #    S -> AB | bB | b  
+        #    B -> bB | b
 
     def __rep_dict(self):
         string = ''
