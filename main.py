@@ -9,3 +9,7 @@ print(entrada)
 entrada.simplificar()
 
 print(entrada)
+
+entrada.chomsky()
+
+print(entrada)
