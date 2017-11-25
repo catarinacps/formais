@@ -1,16 +1,17 @@
 VAZIO = u'\u03B5'
 
 class Derivacao:
-    def __init__(self, elementos):
+    def __init__(self, elementos=None):
         self.derivados = []
-        self.derivados.append(elementos)
         self.variaveis_geradas = []
         self.terminais_gerados = []
-        for simbolo in elementos:
-            if simbolo not in self.variaveis_geradas and simbolo.isupper():
-                self.variaveis_geradas.append(simbolo)
-            if simbolo not in self.terminais_gerados and (simbolo.islower() or simbolo == VAZIO):
-                self.terminais_gerados.append(simbolo)
+        if elementos:
+            self.derivados.append(elementos)
+            for simbolo in elementos:
+                if simbolo not in self.variaveis_geradas and (simbolo.isupper() and simbolo != VAZIO):
+                    self.variaveis_geradas.append(simbolo)
+                if simbolo not in self.terminais_gerados and (simbolo.islower() or simbolo == VAZIO):
+                    self.terminais_gerados.append(simbolo)
 
     def __str__(self):
         return ' | '.join(self.__rep_regras())
@@ -21,16 +22,24 @@ class Derivacao:
     def acrescenta_derivacao(self, elementos):
         self.derivados.append(elementos)
         for simbolo in elementos:
-            if simbolo not in self.variaveis_geradas and (simbolo.isupper() or simbolo == VAZIO):
+            if simbolo not in self.variaveis_geradas and (simbolo.isupper() and simbolo != VAZIO):
                 self.variaveis_geradas.append(simbolo)
             if simbolo not in self.terminais_gerados and (simbolo.islower() or simbolo == VAZIO):
                 self.terminais_gerados.append(simbolo)
 
     def remove_derivacao(self, regra):
         self.derivados = [val for val in self.derivados if val != regra]
+        self.variaveis_geradas = []
+        for deriv in self.derivados:
+            for variavel in deriv:
+                if variavel not in self.variaveis_geradas and (variavel.isupper() and variavel != VAZIO):
+                    self.variaveis_geradas.append(variavel)
+                if variavel not in self.terminais_gerados and (variavel.islower() or variavel == VAZIO):
+                    self.terminais_gerados.append(variavel)
 
     def remove_derivacao_considerando_variavel(self, variavel):
         copia_derivados = self.derivados.copy()
+        self.variaveis_geradas.remove(variavel)
         for derivacao in copia_derivados:
             if variavel in derivacao:
                 self.remove_derivacao(derivacao)

@@ -12,12 +12,14 @@
 [ A ]
 [ D ]
 [ C ]
+[ E ]
 #Inicial					# O simbolo inicial possui uma secao propria, iniciada pela palavra "Inicial"
 [ S ]					# Essa secao possui apenas uma linha com o simbolo inicial entre colchetes.
 #Regras					# A ultima secao vem encabecada pela palavra-chave "Regras"
 [ S ] > [ Z ] [ X ] [ Y ] [ Z ]  		# O simbolo de ">", que representa a derivacao.
 [ A ] > [ a ] 
-[ B ] > [ b ] 		
+[ B ] > [ b ] 	
+[ B ] > [ D ]	#
 [ X ] > [ A ] [ X ] [ A ] 			# Os simbolos da direita devem estar cada um entre colchetes e separados por espacos.
 [ X ] > [ B ] [ X ] [ B ] 			
 [ X ] > [ Z ] 			
@@ -25,9 +27,10 @@
 [ Y ] > [ A ] [ Y ] [ B ] 
 [ Y ] > [ B ] [ Y ] [ A ]		
 [ Y ] > [ Z ]
+[ Y ] > [ A ]
 [ Y ] > [ V ] 
 [ Z ] > [ Z ] [ u ] 
 [ Z ] > [ Z ] [ v ]
 [ Z ] > [ V ]
-[ D ] > [ A ]
-[ C ] > [ D ]
+[ D ] > [ E ]   #
+[ C ] > [ D ]   #

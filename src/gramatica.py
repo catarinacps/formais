@@ -103,7 +103,6 @@ class Gramatica:
 
     def simplificar(self):
         self.__remove_simbolos_inuteis()
-
         fecho_vazio = []
         for chave, valor in self.regras.items():
             if valor.gera_vazio():
@@ -124,6 +123,44 @@ class Gramatica:
                 if derivacao.gera_variavel(key=gerador_vazio):
                     self.regras[variavel].duplica_derivacoes(gerador_vazio)
 
+        fecho_variaveis = {}
+
+        for variavel in self.variaveis:
+            fecho_variaveis[variavel] = []
+            fecho_variaveis[variavel] = self.__fecho_transitivo(fecho_variaveis, variavel, variavel)
+
+        print(fecho_variaveis)
+
+        for variavel in self.variaveis:
+            novas_producoes = Derivacao()
+            for producao in self.regras[variavel].derivados:
+                if len(producao) == 1 and producao[0].islower():    
+                    novas_producoes.acrescenta_derivacao(producao)
+                elif len(producao) >= 2:
+                    novas_producoes.acrescenta_derivacao(producao)
+            for var in fecho_variaveis[variavel]:
+                for producao in self.regras[var].derivados:
+                    if len(producao) == 1 and producao[0].islower():    
+                        novas_producoes.acrescenta_derivacao(producao)
+                    elif len(producao) >= 2:
+                        novas_producoes.acrescenta_derivacao(producao)
+            self.regras[variavel] = novas_producoes
+    
+    def chomsky(self):
+        self.simplificar()
+
+        
+
+    def __gera_nome_variavel_terminal(sef, terminal):
+        return 'REGRA' + terminal
+
+    def __fecho_transitivo(self, fecho_variaveis, variavel, inicial):
+        for producao in self.regras[variavel].derivados:
+                if len(producao) == 1 and producao[0].isupper() and producao[0] not in fecho_variaveis[inicial]:
+                    fecho_variaveis[inicial].append(producao[0])
+                    #print(producao[0])
+                    fecho_variaveis[inicial] = self.__fecho_transitivo(fecho_variaveis, producao[0], inicial)
+        return fecho_variaveis[inicial]
     def __fecho_indireto(self, variavel):
         lista_geradora = []
         for chave, valor in self.regras.items():
@@ -142,7 +179,7 @@ class Gramatica:
         for variavel in copia_auxiliar_var:
             if variavel not in self.regras:
                 self.variaveis.remove(variavel)
-                for chave, valor in copia_auxiliar_reg:
+                for chave, valor in copia_auxiliar_reg.items():
                     if variavel in valor.variaveis_geradas:
                         self.regras[chave].remove_derivacao_considerando_variavel(variavel)
 
@@ -153,10 +190,12 @@ class Gramatica:
         for variavel in fecho_atingivel_terminais:
             fecho_atingivel_terminais += list(set(self.__fecho_indireto(variavel)) - set(fecho_atingivel_terminais))
 
+        #print(self)
         fecho_atingivel_variaveis = [self.inicial]
         for variavel in fecho_atingivel_variaveis:
+            #print(fecho_atingivel_variaveis)
             for variavel_gerada in self.regras[variavel].variaveis_geradas:
-                if variavel_gerada not in fecho_atingivel_variaveis and variavel_gerada != VAZIO:
+                if variavel_gerada not in fecho_atingivel_variaveis:
                     fecho_atingivel_variaveis.append(variavel_gerada)
 
         diferenca_variaveis = [var for var in self.variaveis if var not in fecho_atingivel_variaveis]
@@ -172,7 +211,7 @@ class Gramatica:
                 self.variaveis.remove(variavel)
                 if variavel in self.regras:
                     self.regras.pop(variavel, None)
-                for chave, valor in self.regras:
+                for chave, valor in self.regras.items():
                     if variavel in valor.variaveis_geradas:
                         self.regras[chave].remove_derivacao_considerando_variavel(variavel)
 
