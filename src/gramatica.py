@@ -102,7 +102,6 @@ class Gramatica:
                 '\nInicial: ' + self.inicial + '\nRegras: \n' + self.__rep_dict())
 
     def simplificar(self):
-        self.__remove_simbolos_inuteis()
         fecho_vazio = []
         for chave, valor in self.regras.items():
             if valor.gera_vazio():
@@ -129,22 +128,23 @@ class Gramatica:
             fecho_variaveis[variavel] = []
             fecho_variaveis[variavel] = self.__fecho_transitivo(fecho_variaveis, variavel, variavel)
 
-        #print(fecho_variaveis)
+        print(self, '\naaaaa')
 
         for variavel in self.variaveis:
             novas_producoes = Derivacao()
             for producao in self.regras[variavel].derivados:
-                if len(producao) == 1 and producao[0].islower():    
+                if len(producao) == 1 and producao[0].islower() and producao not in novas_producoes.derivados:
                     novas_producoes.acrescenta_derivacao(producao)
-                elif len(producao) >= 2:
+                elif len(producao) >= 2 and producao not in novas_producoes.derivados:
                     novas_producoes.acrescenta_derivacao(producao)
             for var in fecho_variaveis[variavel]:
                 for producao in self.regras[var].derivados:
-                    if len(producao) == 1 and producao[0].islower():    
+                    if len(producao) == 1 and producao[0].islower() and producao not in novas_producoes.derivados:    
                         novas_producoes.acrescenta_derivacao(producao)
-                    elif len(producao) >= 2:
+                    elif len(producao) >= 2 and producao not in novas_producoes.derivados:
                         novas_producoes.acrescenta_derivacao(producao)
             self.regras[variavel] = novas_producoes
+        self.__remove_simbolos_inuteis()
     
     def chomsky(self):
         self.simplificar()
@@ -181,7 +181,7 @@ class Gramatica:
         return 'REGRA' + terminal
 
     def __gera_nome_variavel_agrupamento(sef, variaveis):
-        return 'REGRA' + ''.join(variaveis)
+        return 'STEVE' + '_'.join(variaveis)
 
     def __fecho_transitivo(self, fecho_variaveis, variavel, inicial):
         for producao in self.regras[variavel].derivados:
