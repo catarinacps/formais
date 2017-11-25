@@ -5,9 +5,12 @@ class Derivacao:
         self.derivados = []
         self.derivados.append(elementos)
         self.variaveis_geradas = []
+        self.terminais_gerados = []
         for simbolo in elementos:
-            if simbolo not in self.variaveis_geradas and (simbolo.isupper() or simbolo == VAZIO):
+            if simbolo not in self.variaveis_geradas and simbolo.isupper():
                 self.variaveis_geradas.append(simbolo)
+            if simbolo not in self.terminais_gerados and (simbolo.islower() or simbolo == VAZIO):
+                self.terminais_gerados.append(simbolo)
 
     def __str__(self):
         return ' | '.join(self.__rep_regras())
@@ -20,6 +23,8 @@ class Derivacao:
         for simbolo in elementos:
             if simbolo not in self.variaveis_geradas and (simbolo.isupper() or simbolo == VAZIO):
                 self.variaveis_geradas.append(simbolo)
+            if simbolo not in self.terminais_gerados and (simbolo.islower() or simbolo == VAZIO):
+                self.terminais_gerados.append(simbolo)
 
     def remove_derivacao(self, regra):
         self.derivados = [val for val in self.derivados if val != regra]
@@ -31,14 +36,28 @@ class Derivacao:
                 self.remove_derivacao(derivacao)
 
     def gera_vazio(self):
-        if VAZIO in self.variaveis_geradas:
+        if VAZIO in self.terminais_gerados:
             return True
         return False
 
-    def gera_chave(self, key):
-        for derivacao in self.derivados:
-            if key in derivacao:
-                return derivacao
+    def gera_variavel(self, key=None):
+        if key:
+            if key in self.variaveis_geradas:
+                return True
+            else:
+                return False
+        elif self.variaveis_geradas:
+            return True
+        return False
+
+    def gera_terminal(self, key=None):
+        if key:
+            if key in self.terminais_gerados:
+                return True
+            else:
+                return False
+        elif self.terminais_gerados:
+            return True
         return False
 
     def remove_ocorrencias_variavel(self, variavel):

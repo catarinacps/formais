@@ -102,6 +102,8 @@ class Gramatica:
                 '\nInicial: ' + self.inicial + '\nRegras: \n' + self.__rep_dict())
 
     def simplificar(self):
+        self.__remove_simbolos_inuteis()
+
         fecho_vazio = []
         for chave, valor in self.regras.items():
             if valor.gera_vazio():
@@ -119,7 +121,7 @@ class Gramatica:
         copia_auxiliar = self.regras.copy()
         for variavel, derivacao in copia_auxiliar.items():
             for gerador_vazio in fecho_vazio:
-                if derivacao.gera_chave(gerador_vazio):
+                if derivacao.gera_variavel(key=gerador_vazio):
                     self.regras[variavel].duplica_derivacoes(gerador_vazio)
 
     def __fecho_indireto(self, variavel):
@@ -144,9 +146,35 @@ class Gramatica:
                     if variavel in valor.variaveis_geradas:
                         self.regras[chave].remove_derivacao_considerando_variavel(variavel)
 
-        fecho_atingivel_variaveis = [self.inicial]
         fecho_atingivel_terminais = []
-        #LITERALMENTE MORRENDO DE FOME
+        for chave, valor in self.regras.items():
+            if valor.gera_terminal():
+                fecho_atingivel_terminais.append(chave)
+        for variavel in fecho_atingivel_terminais:
+            fecho_atingivel_terminais += list(set(self.__fecho_indireto(variavel)) - set(fecho_atingivel_terminais))
+
+        fecho_atingivel_variaveis = [self.inicial]
+        for variavel in fecho_atingivel_variaveis:
+            for variavel_gerada in self.regras[variavel].variaveis_geradas:
+                if variavel_gerada not in fecho_atingivel_variaveis and variavel_gerada != VAZIO:
+                    fecho_atingivel_variaveis.append(variavel_gerada)
+
+        diferenca_variaveis = [var for var in self.variaveis if var not in fecho_atingivel_variaveis]
+        if diferenca_variaveis:
+            for variavel in diferenca_variaveis:
+                self.variaveis.remove(variavel)
+                if variavel in self.regras:
+                    self.regras.pop(variavel, None)
+
+        diferenca_terminais = [var for var in self.variaveis if var not in fecho_atingivel_terminais]
+        if diferenca_terminais:
+            for variavel in diferenca_terminais:
+                self.variaveis.remove(variavel)
+                if variavel in self.regras:
+                    self.regras.pop(variavel, None)
+                for chave, valor in self.regras:
+                    if variavel in valor.variaveis_geradas:
+                        self.regras[chave].remove_derivacao_considerando_variavel(variavel)
 
     def __rep_dict(self):
         string = ''
