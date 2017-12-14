@@ -1,0 +1,15 @@
+GRUPO 6 - LINGUAGENS FORMAIS E AUTOMATOS
+ENTREGA 2
+SIMPLIFICACAO E FORMA NORMAL DE CHOMSKY
+
+Henrique Silva
+Maria Clara Jacintho
+Luma Beserra
+Carine Bertagnolli
+
+COMO USAR:
+Na linha de comando do Windows (CMD ou PowerShell), escreva o seguinte:
+
+	e2-grupo6.exe <arquivo teste>.txt
+
+Onde <arquivo teste> eh o nome do arquivo de texto com a definicao da gramatica

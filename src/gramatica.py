@@ -108,6 +108,7 @@ class Gramatica:
                 fecho_vazio.append(chave)
         for variavel in fecho_vazio:
             fecho_vazio += list(set(self.__fecho_indireto(variavel)) - set(fecho_vazio))
+        
 
         copia_auxiliar = self.regras.copy()
         for variavel, derivacao in copia_auxiliar.items():
@@ -122,13 +123,15 @@ class Gramatica:
                 if derivacao.gera_variavel(key=gerador_vazio):
                     self.regras[variavel].duplica_derivacoes(gerador_vazio)
 
+        print(self)            
+
         fecho_variaveis = {}
 
         for variavel in self.variaveis:
             fecho_variaveis[variavel] = []
             fecho_variaveis[variavel] = self.__fecho_transitivo(fecho_variaveis, variavel, variavel)
 
-        print(self, '\naaaaa')
+        #print(self)
 
         for variavel in self.variaveis:
             novas_producoes = Derivacao()
@@ -144,6 +147,9 @@ class Gramatica:
                     elif len(producao) >= 2 and producao not in novas_producoes.derivados:
                         novas_producoes.acrescenta_derivacao(producao)
             self.regras[variavel] = novas_producoes
+
+        print(self) 
+        
         self.__remove_simbolos_inuteis()
     
     def chomsky(self):
@@ -177,18 +183,18 @@ class Gramatica:
                     
 
 
-    def __gera_nome_variavel_terminal(sef, terminal):
-        return 'REGRA' + terminal
+    def __gera_nome_variavel_terminal(self, terminal):
+        return 'TER' + terminal
 
-    def __gera_nome_variavel_agrupamento(sef, variaveis):
-        return 'STEVE' + '_'.join(variaveis)
+    def __gera_nome_variavel_agrupamento(self, variaveis):
+        return 'VAR' + '_'.join(variaveis)
 
     def __fecho_transitivo(self, fecho_variaveis, variavel, inicial):
         for producao in self.regras[variavel].derivados:
-                if len(producao) == 1 and producao[0].isupper() and producao[0] not in fecho_variaveis[inicial]:
-                    fecho_variaveis[inicial].append(producao[0])
-                    #print(producao[0])
-                    fecho_variaveis[inicial] = self.__fecho_transitivo(fecho_variaveis, producao[0], inicial)
+            if len(producao) == 1 and producao[0].isupper() and producao[0] not in fecho_variaveis[inicial]:
+                fecho_variaveis[inicial].append(producao[0])
+                #print(producao[0])
+                fecho_variaveis[inicial] = self.__fecho_transitivo(fecho_variaveis, producao[0], inicial)
         return fecho_variaveis[inicial]
     def __fecho_indireto(self, variavel):
         lista_geradora = []

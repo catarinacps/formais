@@ -4,12 +4,12 @@ from src.gramatica import Gramatica
 
 entrada = Gramatica(os.path.abspath(sys.argv[1]))
 
-print(entrada)
+print('Entrada\n', entrada)
 
 entrada.simplificar()
 
-print(entrada)
+print('Simplificada\n', entrada)
 
 entrada.chomsky()
 
-print(entrada)
+print('Chomsky\n', entrada)
