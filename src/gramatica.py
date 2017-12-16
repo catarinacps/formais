@@ -1,4 +1,5 @@
 import re
+from collections import deque
 from src.regras import *
 
 
@@ -175,81 +176,137 @@ class Gramatica:
                     self.regras[variavel].acrescenta_derivacao([producao[0], nova_var])
 
     def earley(self, palavra):
+        """Implementacao do parser de earley em Python 3.
+
+        Recenbendo a entrada a ser reconhecida, retorna no terminal cada passo do algoritmo e o
+        resultado final.
+
+        Arguments:
+            palavra {string} -- Palavra a ser testada.
+        """
+
+        for terminal in palavra:
+            if terminal not in self.terminais:
+                print('Palavra possui um terminal que nao pertence a linguagem')
+                return
+        if palavra == '':
+            print('String \'palavra\' vazia. Para reconhecer a palavra vazia, utilize \'V\'')
+            return
+
         tamanho_palavra = len(palavra)
 
+        # Tabela de passos, i.e. D0, D1, D2 e etc
         tabela_passos = []
 
-        lista_vars = []
+        # Passo D0:
+
+        # Inicializamos o D0 na chave do dicionario que corresponde a variavel inicial
         tabela_passos.append({self.inicial: DerivacaoEarley()})
+        # Fila de variaveis a serem visitadas pelo algoritmo no passo D0
+        fila_vars_apos_ponto = deque([])
+        # Para todas as producoes da variavel inicial
         for producao in self.regras[self.inicial].derivados:
+            # Nos acrescentamos elas no passo D0
             tabela_passos[0][self.inicial].acrescenta_derivacao([BULLET] + producao + ['/0'])
+            # e, se o primeiro item da producao for uma variavel (ou seja, o item apos o ponto)
             if producao[0].isupper():
-                lista_vars += [producao[0]]
+                # ele e adicionado na fila de afazeres, pois tal variavel deve ter suas producoes
+                # adicionadas a D0 tambem
+                fila_vars_apos_ponto.append(producao[0])
 
-        while lista_vars:
-            print(lista_vars)
-            for producao in self.regras[lista_vars[0]].derivados:
-                if lista_vars[0] in tabela_passos[0]:
-                    tabela_passos[0][lista_vars[0]].acrescenta_derivacao(
-                        [BULLET] + producao + ['/0'])
+        # Enquanto ainda existir variaveis a serem adicionadas a D0
+        while fila_vars_apos_ponto:
+            var_atual = fila_vars_apos_ponto.popleft()
+            # Visitaremos todas as producoes da dita variavel
+            for producao in self.regras[var_atual].derivados:
+                # Se essa variavel ja existir no passo atual
+                if var_atual in tabela_passos[0]:
+                    # simplesmente acresentamos a pordução
+                    tabela_passos[0][var_atual].acrescenta_derivacao([BULLET] + producao + ['/0'])
                 else:
-                    tabela_passos[0][lista_vars[0]] = DerivacaoEarley([BULLET] + producao + ['/0'])
-                if producao[0].isupper() and producao[0] not in lista_vars:
-                    lista_vars += [producao[0]]
-            lista_vars.pop(0)
+                    # senao, inicializamos a variavel no passo atual
+                    tabela_passos[0][var_atual] = DerivacaoEarley([BULLET] + producao + ['/0'])
 
-        lista_simbolos = []
+                # Finalmente, se o simbolo apos o ponto e uma variavel e ainda nao foi visitada
+                if producao[0].isupper() and producao[0] not in fila_vars_apos_ponto and producao[0] != var_atual:
+                    # ela e adicionada a fila de afazeres
+                    fila_vars_apos_ponto.append(producao[0])
+
+        # Passos Dr
+
+        # Inicializamos a fila de simbolos a serem visitados
+        fila_simbolos_apos_ponto = deque([])
         for passo in range(1, tamanho_palavra + 1):
-            print(tabela_passos)
             tabela_passos.append({})
             for chave, valor in tabela_passos[passo - 1].items():
                 for producao in valor.derivados:
                     if producao[producao.index(BULLET) + 1] == palavra[passo - 1]:
+                        nova_producao = producao.copy()
+                        move_ponto(nova_producao)
+                        simb_apos_ponto = nova_producao[nova_producao.index(BULLET) + 1]
+                        # print(nova_producao)
                         if chave in tabela_passos[passo]:
-                            move_ponto(producao)
-                            tabela_passos[passo][chave].acrescenta_derivacao(producao)
+                            tabela_passos[passo][chave].acrescenta_derivacao(nova_producao)
                         else:
-                            move_ponto(producao)
-                            tabela_passos[passo][chave] = DerivacaoEarley(producao)
-                            # print(producao)
-                        lista_simbolos += [producao[producao.index(BULLET) + 1]]
-                        if '/' in producao[producao.index(BULLET) + 1]:
-                            lista_simbolos += [chave]
-                        print(lista_simbolos)
-            while lista_simbolos:
-                # print(lista_simbolos)
-                if lista_simbolos[0].isupper():
-                    for producao in self.regras[lista_simbolos[0]].derivados:
-                        if lista_simbolos[0] in tabela_passos[passo]:
-                            nova_producao = [BULLET] + producao + ['/' + str(passo)]
-                            tabela_passos[0][lista_simbolos[0]].acrescenta_derivacao(nova_producao)
+                            tabela_passos[passo][chave] = DerivacaoEarley(nova_producao)
+
+                        # Finalmente, se o simbolo apos o ponto e uma variavel e ainda nao foi visitada
+                        if simb_apos_ponto.isupper() and simb_apos_ponto not in fila_simbolos_apos_ponto:
+                            # ela e adicionada a fila de afazeres
+                            fila_simbolos_apos_ponto.append(simb_apos_ponto)
+                        if '/' in simb_apos_ponto:
+                            fila_simbolos_apos_ponto.append(simb_apos_ponto)
+                            fila_simbolos_apos_ponto.append(chave)
+
+            while fila_simbolos_apos_ponto:
+                simb_atual = fila_simbolos_apos_ponto.popleft()
+                if simb_atual.isupper():
+                    for producao in self.regras[simb_atual].derivados:
+                        nova_producao = [BULLET] + producao + ['/' + str(passo)]
+                        simb_apos_ponto = nova_producao[nova_producao.index(BULLET) + 1]
+                        if simb_atual in tabela_passos[passo]:
+                            tabela_passos[passo][simb_atual].acrescenta_derivacao(nova_producao)
                         else:
-                            nova_producao = [BULLET] + producao + ['/' + str(passo)]
-                            tabela_passos[0][lista_simbolos[0]] = DerivacaoEarley(nova_producao)
-                        lista_simbolos += [nova_producao[nova_producao.index(BULLET) + 1]]
-                        if '/' in nova_producao[nova_producao.index(BULLET) + 1]:
-                            lista_simbolos += [lista_simbolos[0]]
-                if '/' in lista_simbolos[0]:
-                    # print(lista_simbolos[0])
-                    passo_prod_final = int(lista_simbolos[0][1:])
+                            tabela_passos[passo][simb_atual] = DerivacaoEarley(nova_producao)
+
+                        # Finalmente, se o simbolo apos o ponto e uma variavel e ainda nao foi visitada
+                        if simb_apos_ponto.isupper() and simb_apos_ponto not in fila_simbolos_apos_ponto:
+                            # ela e adicionada a fila de afazeres
+                            fila_simbolos_apos_ponto.append(simb_apos_ponto)
+
+                if '/' in simb_atual:
+                    passo_prod_final = int(simb_atual[1:])
+                    var_prod_final = fila_simbolos_apos_ponto.popleft()
+
                     for chave, valor in tabela_passos[passo_prod_final].items():
                         for producao in valor.derivados:
-                            if producao[producao.index(BULLET) + 1] == lista_simbolos[1]:
+                            if producao[producao.index(BULLET) + 1] == var_prod_final:
+                                nova_producao = producao.copy()
+                                move_ponto(nova_producao)
+                                simb_apos_ponto = nova_producao[nova_producao.index(BULLET) + 1]
                                 if chave in tabela_passos[passo]:
-                                    move_ponto(producao)
-                                    tabela_passos[passo][chave].acrescenta_derivacao(producao)
+                                    tabela_passos[passo][chave].acrescenta_derivacao(nova_producao)
                                 else:
-                                    move_ponto(producao)
-                                    tabela_passos[passo][chave] = DerivacaoEarley(producao)
-                                lista_simbolos += [producao[producao.index(BULLET) + 1]]
-                                if '/' in producao[producao.index(BULLET) + 1]:
-                                    lista_simbolos += [chave]
-                    lista_simbolos.pop(0)
-                lista_simbolos.pop(0)
-            # print(tabela_passos)
+                                    tabela_passos[passo][chave] = DerivacaoEarley(nova_producao)
+
+                                # Finalmente, se o simbolo apos o ponto e uma variavel e ainda nao foi visitada
+                                if simb_apos_ponto.isupper() and simb_apos_ponto not in fila_simbolos_apos_ponto:
+                                    # ela e adicionada a fila de afazeres
+                                    fila_simbolos_apos_ponto.append(simb_apos_ponto)
+                                if '/' in simb_apos_ponto:
+                                    fila_simbolos_apos_ponto.append(simb_apos_ponto)
+                                    fila_simbolos_apos_ponto.append(chave)
+
+        if self.inicial in tabela_passos[-1]:
+            for producao in tabela_passos[-1][self.inicial].derivados:
+                simb_apos_ponto = producao[producao.index(BULLET) + 1]
+                if '/' in simb_apos_ponto:
+                    print('Reconhece a palavra \'' + palavra + '\'!')
+                    return
+        print('Nao reconhece a palavra \'' + palavra + '\'!')
 
     def __gera_nome_variavel_terminal(self, terminal):
-        return 'TER' + terminal
+        return 'term_' + terminal
 
     def __gera_nome_variavel_agrupamento(self, variaveis):
         return 'VAR' + '_'.join(variaveis)
