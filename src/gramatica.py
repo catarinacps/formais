@@ -184,7 +184,7 @@ class Gramatica:
         for producao in self.regras[self.inicial].derivados:
             tabela_passos[0][self.inicial].acrescenta_derivacao([BULLET] + producao + ['/0'])
             if producao[0].isupper():
-                lista_vars += producao[0]
+                lista_vars += [producao[0]]
 
         while lista_vars:
             print(lista_vars)
@@ -195,7 +195,7 @@ class Gramatica:
                 else:
                     tabela_passos[0][lista_vars[0]] = DerivacaoEarley([BULLET] + producao + ['/0'])
                 if producao[0].isupper() and producao[0] not in lista_vars:
-                    lista_vars += producao[0]
+                    lista_vars += [producao[0]]
             lista_vars.pop(0)
 
         lista_simbolos = []
@@ -211,24 +211,42 @@ class Gramatica:
                         else:
                             move_ponto(producao)
                             tabela_passos[passo][chave] = DerivacaoEarley(producao)
-                        lista_simbolos += producao[producao.index(BULLET) + 1]
+                            # print(producao)
+                        lista_simbolos += [producao[producao.index(BULLET) + 1]]
                         if '/' in producao[producao.index(BULLET) + 1]:
-                            lista_simbolos += producao[producao.index(BULLET) + 2]
+                            lista_simbolos += [chave]
+                        print(lista_simbolos)
             while lista_simbolos:
+                # print(lista_simbolos)
                 if lista_simbolos[0].isupper():
                     for producao in self.regras[lista_simbolos[0]].derivados:
                         if lista_simbolos[0] in tabela_passos[passo]:
-                            tabela_passos[0][lista_simbolos[0]].acrescenta_derivacao(
-                                [BULLET] + producao + ['/' + passo])
+                            nova_producao = [BULLET] + producao + ['/' + str(passo)]
+                            tabela_passos[0][lista_simbolos[0]].acrescenta_derivacao(nova_producao)
                         else:
-                            tabela_passos[0][lista_simbolos[0]] = DerivacaoEarley(
-                                [BULLET] + producao + ['/' + passo])
-                        lista_simbolos += producao[producao.index(BULLET) + 1]
-                        if '/' in producao[producao.index(BULLET) + 1]:
-                            lista_simbolos += producao[producao.index(BULLET) + 2]
+                            nova_producao = [BULLET] + producao + ['/' + str(passo)]
+                            tabela_passos[0][lista_simbolos[0]] = DerivacaoEarley(nova_producao)
+                        lista_simbolos += [nova_producao[nova_producao.index(BULLET) + 1]]
+                        if '/' in nova_producao[nova_producao.index(BULLET) + 1]:
+                            lista_simbolos += [lista_simbolos[0]]
                 if '/' in lista_simbolos[0]:
+                    # print(lista_simbolos[0])
+                    passo_prod_final = int(lista_simbolos[0][1:])
+                    for chave, valor in tabela_passos[passo_prod_final].items():
+                        for producao in valor.derivados:
+                            if producao[producao.index(BULLET) + 1] == lista_simbolos[1]:
+                                if chave in tabela_passos[passo]:
+                                    move_ponto(producao)
+                                    tabela_passos[passo][chave].acrescenta_derivacao(producao)
+                                else:
+                                    move_ponto(producao)
+                                    tabela_passos[passo][chave] = DerivacaoEarley(producao)
+                                lista_simbolos += [producao[producao.index(BULLET) + 1]]
+                                if '/' in producao[producao.index(BULLET) + 1]:
+                                    lista_simbolos += [chave]
+                    lista_simbolos.pop(0)
                 lista_simbolos.pop(0)
-            print(tabela_passos)
+            # print(tabela_passos)
 
     def __gera_nome_variavel_terminal(self, terminal):
         return 'TER' + terminal
