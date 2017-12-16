@@ -1,4 +1,6 @@
 VAZIO = u'\u03B5'
+BULLET = u'\u2022'
+
 
 class Derivacao:
     def __init__(self, elementos=None):
@@ -31,11 +33,11 @@ class Derivacao:
         self.derivados = [val for val in self.derivados if val != regra]
         self.variaveis_geradas = []
         for deriv in self.derivados:
-            for variavel in deriv:
-                if variavel not in self.variaveis_geradas and (variavel.isupper() and variavel != VAZIO):
-                    self.variaveis_geradas.append(variavel)
-                if variavel not in self.terminais_gerados and (variavel.islower() or variavel == VAZIO):
-                    self.terminais_gerados.append(variavel)
+            for simbolo in deriv:
+                if simbolo not in self.variaveis_geradas and (simbolo.isupper() and simbolo != VAZIO):
+                    self.variaveis_geradas.append(simbolo)
+                if simbolo not in self.terminais_gerados and (simbolo.islower() or simbolo == VAZIO):
+                    self.terminais_gerados.append(simbolo)
 
     def remove_derivacao_considerando_variavel(self, variavel):
         copia_derivados = self.derivados.copy()
@@ -94,3 +96,36 @@ class Derivacao:
         for deriv in self.derivados:
             lista_strings.append(' '.join(deriv))
         return lista_strings
+
+
+class DerivacaoEarley(Derivacao):
+    def __init__(self, elementos=None):
+        self.derivados = []
+        self.variaveis_geradas = []
+        self.terminais_gerados = []
+        if elementos:
+            self.derivados.append(elementos)
+            for simbolo in elementos:
+                if simbolo not in self.variaveis_geradas and (simbolo.isupper() and simbolo != VAZIO):
+                    self.variaveis_geradas.append(simbolo)
+                if simbolo not in self.terminais_gerados and (simbolo.islower() or simbolo == VAZIO):
+                    self.terminais_gerados.append(simbolo)
+
+    def acrescenta_derivacao(self, elementos):
+        if elementos not in self.derivados:
+            self.derivados.append(elementos)
+            for simbolo in elementos:
+                if simbolo not in self.variaveis_geradas and (simbolo.isupper() and simbolo != VAZIO):
+                    self.variaveis_geradas.append(simbolo)
+                if simbolo not in self.terminais_gerados and (simbolo.islower() or simbolo == VAZIO):
+                    self.terminais_gerados.append(simbolo)
+
+    def remove_derivacao(self, regra):
+        self.derivados = [val for val in self.derivados if val != regra]
+        self.variaveis_geradas = []
+        for deriv in self.derivados:
+            for simbolo in deriv:
+                if simbolo not in self.variaveis_geradas and (simbolo.isupper() and simbolo != VAZIO):
+                    self.variaveis_geradas.append(simbolo)
+                if simbolo not in self.terminais_gerados and (simbolo.islower() or simbolo == VAZIO):
+                    self.terminais_gerados.append(simbolo)

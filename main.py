@@ -10,6 +10,8 @@ entrada.simplificar()
 
 print('Simplificada\n', entrada)
 
-entrada.chomsky()
+# entrada.chomsky()
 
-print('Chomsky\n', entrada)
+# print('Chomsky\n', entrada)
+
+entrada.earley('xbx')

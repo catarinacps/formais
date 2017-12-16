@@ -1,12 +1,14 @@
 import re
 from src.regras import *
 
+
 class Gramatica:
     """Classe Gramatica, que representa uma gramatica qualquer.
 
     Dependencias:
         re
     """
+
     def __init__(self, abspath):
         """Construtor da classe Gramatica, que busca padroes regex e inicializa os seus atributos.
 
@@ -19,10 +21,10 @@ class Gramatica:
         # automaticamente ao chegar no fim do bloco.
         with open(abspath, 'r') as textFile:
             # A segur estão as regras de regex que eu criei pra pegar as coisas de arquivos de texto
-            regex_terminais = re.compile(r'(?<=^\[ )[a-z](?= \])', re.A)
-            regex_regras = re.compile(r'(?<=\[ )\w(?= \])', re.A)
-            regex_variaveis = re.compile(r'(?<=^\[ )[A-Z](?= \])', re.A)
-            regex_secao = re.compile(r'^(#Terminais|#Variaveis|#Inicial|#Regras)', re.A)
+            regex_terminais = re.compile(r'(?<=^\[ )[a-z](?= \])')
+            regex_regras = re.compile(r'(?<=\[ )\w(?= \])')
+            regex_variaveis = re.compile(r'(?<=^\[ )[A-Z](?= \])')
+            regex_secao = re.compile(r'^(#Terminais|#Variaveis|#Inicial|#Regras)')
 
             # Aqui eu inicializo os atributos do futuro objeto de Gramática, onde:
             self.terminais = []
@@ -108,7 +110,6 @@ class Gramatica:
                 fecho_vazio.append(chave)
         for variavel in fecho_vazio:
             fecho_vazio += list(set(self.__fecho_indireto(variavel)) - set(fecho_vazio))
-        
 
         copia_auxiliar = self.regras.copy()
         for variavel, derivacao in copia_auxiliar.items():
@@ -123,15 +124,11 @@ class Gramatica:
                 if derivacao.gera_variavel(key=gerador_vazio):
                     self.regras[variavel].duplica_derivacoes(gerador_vazio)
 
-        print(self)            
-
         fecho_variaveis = {}
 
         for variavel in self.variaveis:
             fecho_variaveis[variavel] = []
             fecho_variaveis[variavel] = self.__fecho_transitivo(fecho_variaveis, variavel, variavel)
-
-        #print(self)
 
         for variavel in self.variaveis:
             novas_producoes = Derivacao()
@@ -142,26 +139,24 @@ class Gramatica:
                     novas_producoes.acrescenta_derivacao(producao)
             for var in fecho_variaveis[variavel]:
                 for producao in self.regras[var].derivados:
-                    if len(producao) == 1 and producao[0].islower() and producao not in novas_producoes.derivados:    
+                    if len(producao) == 1 and producao[0].islower() and producao not in novas_producoes.derivados:
                         novas_producoes.acrescenta_derivacao(producao)
                     elif len(producao) >= 2 and producao not in novas_producoes.derivados:
                         novas_producoes.acrescenta_derivacao(producao)
             self.regras[variavel] = novas_producoes
 
-        print(self) 
-        
         self.__remove_simbolos_inuteis()
-    
+
     def chomsky(self):
         self.simplificar()
 
         copia_auxiliar_reg = self.regras.copy()
         for variavel, derivacao in copia_auxiliar_reg.items():
             for indice_deriv, producao in enumerate(derivacao.derivados):
-                for indice_prod, simbolo in enumerate(producao): 
-                    if simbolo.islower(): 
+                for indice_prod, simbolo in enumerate(producao):
+                    if simbolo.islower():
                         nova_var = self.__gera_nome_variavel_terminal(simbolo)
-                        if nova_var  not in self.regras:
+                        if nova_var not in self.regras:
                             self.variaveis.append(nova_var)
                             self.regras[nova_var] = Derivacao(simbolo)
                         self.regras[variavel].derivados[indice_deriv][indice_prod] = nova_var
@@ -178,10 +173,62 @@ class Gramatica:
                         copia_auxiliar_reg.append((nova_var, Derivacao(nova_producao)))
                     self.regras[variavel].remove_derivacao(producao)
                     self.regras[variavel].acrescenta_derivacao([producao[0], nova_var])
-        
-        
-                    
 
+    def earley(self, palavra):
+        tamanho_palavra = len(palavra)
+
+        tabela_passos = []
+
+        lista_vars = []
+        tabela_passos.append({self.inicial: DerivacaoEarley()})
+        for producao in self.regras[self.inicial].derivados:
+            tabela_passos[0][self.inicial].acrescenta_derivacao([BULLET] + producao + ['/0'])
+            if producao[0].isupper():
+                lista_vars += producao[0]
+
+        while lista_vars:
+            print(lista_vars)
+            for producao in self.regras[lista_vars[0]].derivados:
+                if lista_vars[0] in tabela_passos[0]:
+                    tabela_passos[0][lista_vars[0]].acrescenta_derivacao(
+                        [BULLET] + producao + ['/0'])
+                else:
+                    tabela_passos[0][lista_vars[0]] = DerivacaoEarley([BULLET] + producao + ['/0'])
+                if producao[0].isupper() and producao[0] not in lista_vars:
+                    lista_vars += producao[0]
+            lista_vars.pop(0)
+
+        lista_simbolos = []
+        for passo in range(1, tamanho_palavra + 1):
+            print(tabela_passos)
+            tabela_passos.append({})
+            for chave, valor in tabela_passos[passo - 1].items():
+                for producao in valor.derivados:
+                    if producao[producao.index(BULLET) + 1] == palavra[passo - 1]:
+                        if chave in tabela_passos[passo]:
+                            move_ponto(producao)
+                            tabela_passos[passo][chave].acrescenta_derivacao(producao)
+                        else:
+                            move_ponto(producao)
+                            tabela_passos[passo][chave] = DerivacaoEarley(producao)
+                        lista_simbolos += producao[producao.index(BULLET) + 1]
+                        if '/' in producao[producao.index(BULLET) + 1]:
+                            lista_simbolos += producao[producao.index(BULLET) + 2]
+            while lista_simbolos:
+                if lista_simbolos[0].isupper():
+                    for producao in self.regras[lista_simbolos[0]].derivados:
+                        if lista_simbolos[0] in tabela_passos[passo]:
+                            tabela_passos[0][lista_simbolos[0]].acrescenta_derivacao(
+                                [BULLET] + producao + ['/' + passo])
+                        else:
+                            tabela_passos[0][lista_simbolos[0]] = DerivacaoEarley(
+                                [BULLET] + producao + ['/' + passo])
+                        lista_simbolos += producao[producao.index(BULLET) + 1]
+                        if '/' in producao[producao.index(BULLET) + 1]:
+                            lista_simbolos += producao[producao.index(BULLET) + 2]
+                if '/' in lista_simbolos[0]:
+                lista_simbolos.pop(0)
+            print(tabela_passos)
 
     def __gera_nome_variavel_terminal(self, terminal):
         return 'TER' + terminal
@@ -193,9 +240,11 @@ class Gramatica:
         for producao in self.regras[variavel].derivados:
             if len(producao) == 1 and producao[0].isupper() and producao[0] not in fecho_variaveis[inicial]:
                 fecho_variaveis[inicial].append(producao[0])
-                #print(producao[0])
-                fecho_variaveis[inicial] = self.__fecho_transitivo(fecho_variaveis, producao[0], inicial)
+                # print(producao[0])
+                fecho_variaveis[inicial] = self.__fecho_transitivo(
+                    fecho_variaveis, producao[0], inicial)
         return fecho_variaveis[inicial]
+
     def __fecho_indireto(self, variavel):
         lista_geradora = []
         for chave, valor in self.regras.items():
@@ -223,24 +272,26 @@ class Gramatica:
             if valor.gera_terminal():
                 fecho_atingivel_terminais.append(chave)
         for variavel in fecho_atingivel_terminais:
-            fecho_atingivel_terminais += list(set(self.__fecho_indireto(variavel)) - set(fecho_atingivel_terminais))
+            fecho_atingivel_terminais += list(set(self.__fecho_indireto(variavel)
+                                                  ) - set(fecho_atingivel_terminais))
 
-        #print(self)
         fecho_atingivel_variaveis = [self.inicial]
         for variavel in fecho_atingivel_variaveis:
-            #print(fecho_atingivel_variaveis)
+            # print(fecho_atingivel_variaveis)
             for variavel_gerada in self.regras[variavel].variaveis_geradas:
                 if variavel_gerada not in fecho_atingivel_variaveis:
                     fecho_atingivel_variaveis.append(variavel_gerada)
 
-        diferenca_variaveis = [var for var in self.variaveis if var not in fecho_atingivel_variaveis]
+        diferenca_variaveis = [
+            var for var in self.variaveis if var not in fecho_atingivel_variaveis]
         if diferenca_variaveis:
             for variavel in diferenca_variaveis:
                 self.variaveis.remove(variavel)
                 if variavel in self.regras:
                     self.regras.pop(variavel, None)
 
-        diferenca_terminais = [var for var in self.variaveis if var not in fecho_atingivel_terminais]
+        diferenca_terminais = [
+            var for var in self.variaveis if var not in fecho_atingivel_terminais]
         if diferenca_terminais:
             for variavel in diferenca_terminais:
                 self.variaveis.remove(variavel)
@@ -255,3 +306,8 @@ class Gramatica:
         for key, value in self.regras.items():
             string += key + ' -> ' + str(value) + '\n'
         return string
+
+
+def move_ponto(regra):
+    index_ponto = regra.index(BULLET)
+    regra[index_ponto], regra[index_ponto + 1] = regra[index_ponto + 1], regra[index_ponto]
