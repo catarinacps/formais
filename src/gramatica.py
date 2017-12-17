@@ -105,15 +105,21 @@ class Gramatica:
                 '\nInicial: ' + self.inicial + '\nRegras: \n' + self.__rep_dict())
 
     def simplificar(self):
+        # Remocao das producaoes vazias
         fecho_vazio = []
+        # Inicializamos o fecho vazio
         for chave, valor in self.regras.items():
+            # e colocamos, inicialmente, todas as producoes de palavras vazias no fecho
             if valor.gera_vazio():
                 fecho_vazio.append(chave)
+        # após isso, achamos o fecho indireto de producoes que produzem tais variavel que produzem vazio
         for variavel in fecho_vazio:
+            # e adicionamos todas as novas variaveis que produzem indiretamente o vazio
             fecho_vazio += list(set(self.__fecho_indireto(variavel)) - set(fecho_vazio))
 
         copia_auxiliar = self.regras.copy()
         for variavel, derivacao in copia_auxiliar.items():
+            # Apos isso, removemos todas as derivacoes que produzem vazio da gramatica
             if variavel != self.inicial and derivacao.gera_vazio():
                 if len(derivacao.derivados) == 1:
                     self.__remove_variavel(variavel)
@@ -121,29 +127,31 @@ class Gramatica:
                     self.regras[variavel].remove_derivacao([VAZIO])
         copia_auxiliar = self.regras.copy()
         for variavel, derivacao in copia_auxiliar.items():
+            # E
             for gerador_vazio in fecho_vazio:
                 if derivacao.gera_variavel(key=gerador_vazio):
                     self.regras[variavel].duplica_derivacoes(gerador_vazio)
 
         fecho_variaveis = {}
-
         for variavel in self.variaveis:
             fecho_variaveis[variavel] = []
             fecho_variaveis[variavel] = self.__fecho_transitivo(fecho_variaveis, variavel, variavel)
 
         for variavel in self.variaveis:
             novas_producoes = Derivacao()
-            for producao in self.regras[variavel].derivados:
-                if len(producao) == 1 and producao[0].islower() and producao not in novas_producoes.derivados:
-                    novas_producoes.acrescenta_derivacao(producao)
-                elif len(producao) >= 2 and producao not in novas_producoes.derivados:
-                    novas_producoes.acrescenta_derivacao(producao)
-            for var in fecho_variaveis[variavel]:
-                for producao in self.regras[var].derivados:
+            if variavel in self.regras:
+                for producao in self.regras[variavel].derivados:
                     if len(producao) == 1 and producao[0].islower() and producao not in novas_producoes.derivados:
                         novas_producoes.acrescenta_derivacao(producao)
                     elif len(producao) >= 2 and producao not in novas_producoes.derivados:
                         novas_producoes.acrescenta_derivacao(producao)
+            for var in fecho_variaveis[variavel]:
+                if var in self.regras:
+                    for producao in self.regras[var].derivados:
+                        if len(producao) == 1 and producao[0].islower() and producao not in novas_producoes.derivados:
+                            novas_producoes.acrescenta_derivacao(producao)
+                        elif len(producao) >= 2 and producao not in novas_producoes.derivados:
+                            novas_producoes.acrescenta_derivacao(producao)
             self.regras[variavel] = novas_producoes
 
         self.__remove_simbolos_inuteis()
@@ -188,10 +196,10 @@ class Gramatica:
         for terminal in palavra:
             if terminal not in self.terminais:
                 print('Palavra possui um terminal que nao pertence a linguagem')
-                return
+                return False
         if palavra == '':
             print('String \'palavra\' vazia. Para reconhecer a palavra vazia, utilize \'V\'')
-            return
+            return False
 
         tamanho_palavra = len(palavra)
 
@@ -312,18 +320,19 @@ class Gramatica:
         return False
 
     def __gera_nome_variavel_terminal(self, terminal):
-        return 'term' + terminal
+        return 'term_' + terminal
 
     def __gera_nome_variavel_agrupamento(self, variaveis):
-        return 'VAR' + ''.join(variaveis).upper()
+        return 'VAR_' + '_'.join(variaveis).upper()
 
     def __fecho_transitivo(self, fecho_variaveis, variavel, inicial):
-        for producao in self.regras[variavel].derivados:
-            if len(producao) == 1 and producao[0].isupper() and producao[0] not in fecho_variaveis[inicial]:
-                fecho_variaveis[inicial].append(producao[0])
-                # print(producao[0])
-                fecho_variaveis[inicial] = self.__fecho_transitivo(
-                    fecho_variaveis, producao[0], inicial)
+        if variavel in self.regras:
+            for producao in self.regras[variavel].derivados:
+                if len(producao) == 1 and producao[0].isupper() and producao[0] not in fecho_variaveis[inicial]:
+                    fecho_variaveis[inicial].append(producao[0])
+                    # print(producao[0])
+                    fecho_variaveis[inicial] = self.__fecho_transitivo(
+                        fecho_variaveis, producao[0], inicial)
         return fecho_variaveis[inicial]
 
     def __fecho_indireto(self, variavel):
