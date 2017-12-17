@@ -232,6 +232,9 @@ class Gramatica:
                     # ela e adicionada a fila de afazeres
                     fila_vars_apos_ponto.append(producao[0])
 
+        print('D0:')
+        print(self.__rep_passo(tabela_passos[0]))
+
         # Passos Dr
 
         # Inicializamos a fila de simbolos a serem visitados
@@ -296,20 +299,23 @@ class Gramatica:
                                 if '/' in simb_apos_ponto:
                                     fila_simbolos_apos_ponto.append(simb_apos_ponto)
                                     fila_simbolos_apos_ponto.append(chave)
+            print('D' + str(passo) + ':')
+            print(self.__rep_passo(tabela_passos[passo]))
 
         if self.inicial in tabela_passos[-1]:
             for producao in tabela_passos[-1][self.inicial].derivados:
                 simb_apos_ponto = producao[producao.index(BULLET) + 1]
                 if '/' in simb_apos_ponto:
                     print('Reconhece a palavra \'' + palavra + '\'!')
-                    return
+                    return True
         print('Nao reconhece a palavra \'' + palavra + '\'!')
+        return False
 
     def __gera_nome_variavel_terminal(self, terminal):
-        return 'term_' + terminal
+        return 'term' + terminal
 
     def __gera_nome_variavel_agrupamento(self, variaveis):
-        return 'VAR' + '_'.join(variaveis)
+        return 'VAR' + ''.join(variaveis).upper()
 
     def __fecho_transitivo(self, fecho_variaveis, variavel, inicial):
         for producao in self.regras[variavel].derivados:
@@ -380,6 +386,13 @@ class Gramatica:
         string = ''
         for key, value in self.regras.items():
             string += key + ' -> ' + str(value) + '\n'
+        return string
+
+    def __rep_passo(self, passo):
+        string = ''
+        for key, value in passo.items():
+            for producao in value.lista_producoes():
+                string += key + ' -> ' + producao + '\n'
         return string
 
 

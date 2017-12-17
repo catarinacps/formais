@@ -129,3 +129,12 @@ class DerivacaoEarley(Derivacao):
                     self.variaveis_geradas.append(simbolo)
                 if simbolo not in self.terminais_gerados and (simbolo.islower() or simbolo == VAZIO):
                     self.terminais_gerados.append(simbolo)
+
+    def __rep_regras(self):
+        lista_strings = []
+        for deriv in self.derivados:
+            lista_strings.append(' '.join(deriv))
+        return lista_strings
+
+    def lista_producoes(self):
+        return self.__rep_regras()
