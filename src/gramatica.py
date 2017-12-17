@@ -281,7 +281,7 @@ class Gramatica:
                             tabela_passos[passo][simb_atual] = DerivacaoEarley(nova_producao)
 
                         # Finalmente, se o simbolo apos o ponto e uma variavel e ainda nao foi visitada
-                        if simb_apos_ponto.isupper() and simb_apos_ponto not in fila_simbolos_apos_ponto:
+                        if simb_apos_ponto.isupper() and simb_apos_ponto not in fila_simbolos_apos_ponto and simb_apos_ponto != simb_atual:
                             # ela e adicionada a fila de afazeres
                             fila_simbolos_apos_ponto.append(simb_apos_ponto)
 
@@ -305,8 +305,9 @@ class Gramatica:
                                     # ela e adicionada a fila de afazeres
                                     fila_simbolos_apos_ponto.append(simb_apos_ponto)
                                 if '/' in simb_apos_ponto:
-                                    fila_simbolos_apos_ponto.append(simb_apos_ponto)
-                                    fila_simbolos_apos_ponto.append(chave)
+                                    if simb_apos_ponto != simb_atual and chave != var_prod_final:
+                                        fila_simbolos_apos_ponto.append(simb_apos_ponto)
+                                        fila_simbolos_apos_ponto.append(chave)
             print('D' + str(passo) + ':')
             print(self.__rep_passo(tabela_passos[passo]))
 
