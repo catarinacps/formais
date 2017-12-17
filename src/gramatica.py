@@ -157,7 +157,7 @@ class Gramatica:
         self.__remove_simbolos_inuteis()
 
     def chomsky(self):
-        self.simplificar()
+        # self.simplificar()
 
         copia_auxiliar_reg = self.regras.copy()
         for variavel, derivacao in copia_auxiliar_reg.items():
@@ -170,7 +170,7 @@ class Gramatica:
                             self.regras[nova_var] = Derivacao(simbolo)
                         self.regras[variavel].derivados[indice_deriv][indice_prod] = nova_var
 
-        copia_auxiliar_reg = list(self.regras.items())
+        copia_auxiliar_reg = list(self.regras.items()).copy()
         for variavel, derivacao in copia_auxiliar_reg:
             for indice_deriv, producao in enumerate(derivacao.derivados):
                 if len(producao) > 2:
@@ -320,10 +320,10 @@ class Gramatica:
         return False
 
     def __gera_nome_variavel_terminal(self, terminal):
-        return 'term_' + terminal
+        return 'TERM_' + terminal.upper()
 
     def __gera_nome_variavel_agrupamento(self, variaveis):
-        return 'VAR_' + '_'.join(variaveis).upper()
+        return 'VAR' + '_'.join(variaveis).upper()
 
     def __fecho_transitivo(self, fecho_variaveis, variavel, inicial):
         if variavel in self.regras:
