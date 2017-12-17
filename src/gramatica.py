@@ -1,6 +1,7 @@
 import re
 from collections import deque
 from src.regras import *
+from src.tree import *
 
 
 class Gramatica:
@@ -157,8 +158,6 @@ class Gramatica:
         self.__remove_simbolos_inuteis()
 
     def chomsky(self):
-        # self.simplificar()
-
         copia_auxiliar_reg = self.regras.copy()
         for variavel, derivacao in copia_auxiliar_reg.items():
             for indice_deriv, producao in enumerate(derivacao.derivados):
@@ -202,6 +201,7 @@ class Gramatica:
             return False
 
         tamanho_palavra = len(palavra)
+        word = DerivacaoEarley([BULLET] + list(palavra))
 
         # Tabela de passos, i.e. D0, D1, D2 e etc
         tabela_passos = []
@@ -215,7 +215,7 @@ class Gramatica:
         # Para todas as producoes da variavel inicial
         for producao in self.regras[self.inicial].derivados:
             # Nos acrescentamos elas no passo D0
-            tabela_passos[0][self.inicial].acrescenta_derivacao([BULLET] + producao + ['/0'])
+            tabela_passos[0][self.inicial].acrescenta_derivacao([BULLET] + producao + ['/0'], Arvore(self.inicial), producao)
             # e, se o primeiro item da producao for uma variavel (ou seja, o item apos o ponto)
             if producao[0].isupper():
                 # ele e adicionado na fila de afazeres, pois tal variavel deve ter suas producoes
@@ -240,8 +240,10 @@ class Gramatica:
                     # ela e adicionada a fila de afazeres
                     fila_vars_apos_ponto.append(producao[0])
 
-        print('D0:')
+        print('D0:', word)
+        print('------------------------')
         print(self.__rep_passo(tabela_passos[0]))
+        print('')
 
         # Passos Dr
 
@@ -266,8 +268,9 @@ class Gramatica:
                             # ela e adicionada a fila de afazeres
                             fila_simbolos_apos_ponto.append(simb_apos_ponto)
                         if '/' in simb_apos_ponto:
-                            fila_simbolos_apos_ponto.append(simb_apos_ponto)
-                            fila_simbolos_apos_ponto.append(chave)
+                            if simb_apos_ponto not in fila_simbolos_apos_ponto and chave not in fila_simbolos_apos_ponto:
+                                fila_simbolos_apos_ponto.append(simb_apos_ponto)
+                                fila_simbolos_apos_ponto.append(chave)
 
             while fila_simbolos_apos_ponto:
                 simb_atual = fila_simbolos_apos_ponto.popleft()
@@ -308,8 +311,11 @@ class Gramatica:
                                     if simb_apos_ponto != simb_atual and chave != var_prod_final:
                                         fila_simbolos_apos_ponto.append(simb_apos_ponto)
                                         fila_simbolos_apos_ponto.append(chave)
-            print('D' + str(passo) + ':')
+            move_ponto(word.derivados[0])
+            print('D' + str(passo) + ':', word)
+            print('------------------------')
             print(self.__rep_passo(tabela_passos[passo]))
+            print('')
 
         if self.inicial in tabela_passos[-1]:
             for producao in tabela_passos[-1][self.inicial].derivados:

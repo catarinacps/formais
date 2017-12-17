@@ -1,3 +1,5 @@
+from src.tree import *
+
 VAZIO = u'\u03B5'
 BULLET = u'\u2022'
 
@@ -99,11 +101,16 @@ class Derivacao:
 
 
 class DerivacaoEarley(Derivacao):
-    def __init__(self, elementos=None):
+    def __init__(self, elementos=None, arvore=None, variavel=None):
         self.derivados = []
         self.variaveis_geradas = []
         self.terminais_gerados = []
+        self.lista_arvores = []
         if elementos:
+            if arvore and variavel:
+                self.lista_arvores.append(arvore.adiciona_nodo(variavel, elementos))
+            else:
+                self.lista_arvores.append(Arvore(elementos))
             self.derivados.append(elementos)
             for simbolo in elementos:
                 if simbolo not in self.variaveis_geradas and (simbolo.isupper() and simbolo != VAZIO):
@@ -111,20 +118,14 @@ class DerivacaoEarley(Derivacao):
                 if simbolo not in self.terminais_gerados and (simbolo.islower() or simbolo == VAZIO):
                     self.terminais_gerados.append(simbolo)
 
-    def acrescenta_derivacao(self, elementos):
+    def acrescenta_derivacao(self, elementos, arvore=None, variavel=None):
         if elementos not in self.derivados:
+            if arvore and variavel:
+                self.lista_arvores.append(arvore.adiciona_nodo(variavel, elementos))
+            else:
+                self.lista_arvores.append(Arvore(elementos))
             self.derivados.append(elementos)
             for simbolo in elementos:
-                if simbolo not in self.variaveis_geradas and (simbolo.isupper() and simbolo != VAZIO):
-                    self.variaveis_geradas.append(simbolo)
-                if simbolo not in self.terminais_gerados and (simbolo.islower() or simbolo == VAZIO):
-                    self.terminais_gerados.append(simbolo)
-
-    def remove_derivacao(self, regra):
-        self.derivados = [val for val in self.derivados if val != regra]
-        self.variaveis_geradas = []
-        for deriv in self.derivados:
-            for simbolo in deriv:
                 if simbolo not in self.variaveis_geradas and (simbolo.isupper() and simbolo != VAZIO):
                     self.variaveis_geradas.append(simbolo)
                 if simbolo not in self.terminais_gerados and (simbolo.islower() or simbolo == VAZIO):
